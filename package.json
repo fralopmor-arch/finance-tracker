@@ -1,0 +1,25 @@
+{
+  "name": "finance-tracker",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "seed": "node seed.mjs",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.2.1",
+    "nuxt": "^4.2.1",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@nuxtjs/supabase": "^2.0.1",
+    "date-fns": "^4.1.0"
+  }
+}
