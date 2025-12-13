@@ -1,3 +1,5 @@
+//Para quitar logica a Index.vue y hacerlo reutilizable.
+
 import { ref, computed, watch } from "vue";
 import { useSupabaseClient } from "#imports";
 
