@@ -85,53 +85,50 @@
 <script setup>
 import { ref, computed } from "vue";
 import { transactionViewOptions } from "~/constants";
+import { useSelectedTimePeriod } from "~/composables/useSelectedTimePeriod";
 import useFetchTransactions from "~/composables/useFetchTransactions";
-
-const { transactions, isLoading, refreshTransactions, addTransaction } =
-  useFetchTransactions();
 
 const selectedView = ref(transactionViewOptions[1]);
 const isOpen = ref(false);
+const { current, previous } = useSelectedTimePeriod(selectedView);
+
+// current period data (auto-fetches when current changes)
+const {
+  pending,
+  refresh,
+  transactions: {
+    incomeCount,
+    expenseCount,
+    incomeTotal,
+    expenseTotal,
+    grouped: { byDate },
+  },
+} = useFetchTransactions(current);
+
+// previous period stats
+const {
+  refresh: refreshPrevious,
+  transactions: {
+    incomeTotal: prevIncomeTotal,
+    expenseTotal: prevExpenseTotal,
+    investmentsTotal: prevInvestTotal,
+    savingTotal: prevSavingTotal,
+  },
+} = useFetchTransactions(previous);
+
+// initial refresh both ranges (top-level await supported in Nuxt)
+await Promise.all([refresh(), refreshPrevious()]);
 
 const openModal = () => {
   isOpen.value = true;
 };
 
-const income = computed(() =>
-  transactions.value.filter((t) => t.type === "Income")
-);
-const expense = computed(() =>
-  transactions.value.filter((t) => t.type === "Expense")
-);
-
-const incomeCount = computed(() => income.value.length);
-const expenseCount = computed(() => expense.value.length);
-
-const incomeTotal = computed(() =>
-  income.value.reduce((sum, transaction) => sum + (transaction.amount || 0), 0)
-);
-const expenseTotal = computed(() =>
-  expense.value.reduce((sum, transaction) => sum + (transaction.amount || 0), 0)
-);
+// template expects these names — create small aliases
+const isLoading = pending;
+const refreshTransactions = refresh;
 
 const transactionsGroupedByDate = computed(() => {
-  const grouped = {};
-  const sorted = [...(transactions.value || [])].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
-
-  for (const transaction of sorted) {
-    const date = new Date(transaction.created_at).toISOString().split("T")[0];
-    if (!grouped[date]) grouped[date] = [];
-    grouped[date].push(transaction);
-  }
-
-  const arr = Object.entries(grouped).map(([date, txs]) => ({
-    date,
-    transactions: txs,
-  }));
-
-  arr.sort((a, b) => new Date(b.date) - new Date(a.date));
-  return arr;
+  const obj = byDate && byDate.value ? byDate.value : {};
+  return Object.keys(obj).map((d) => ({ date: d, transactions: obj[d] }));
 });
 </script>
