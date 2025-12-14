@@ -25,14 +25,14 @@
     <Trend
       color="green"
       title="Investments"
-      :amount="4000"
+      :amount="investmentsTotal"
       :last-amount="3000"
       :loading="isLoading"
     />
     <Trend
       color="red"
       title="Saving"
-      :amount="4000"
+      :amount="savingTotal"
       :last-amount="4100"
       :loading="isLoading"
     />
@@ -101,6 +101,8 @@ const {
     expenseCount,
     incomeTotal,
     expenseTotal,
+    investmentsTotal,
+    savingTotal,
     grouped: { byDate },
   },
 } = useFetchTransactions(current);
