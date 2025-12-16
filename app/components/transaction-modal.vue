@@ -90,7 +90,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "save", "saved"]); // include 'saved'
 
 const supabase = useSupabaseClient(); // added
-const toast = useToast(); // added
+const { toastAdd, toastError } = useAppToast(); // added
 const isLoading = ref(false); // added
 
 const initialState = {
@@ -140,10 +140,7 @@ const save = async () => {
 
     if (error) throw error;
 
-    toast.add?.({
-      title: "Transaction saved",
-      icon: "i-heroicons-check-circle",
-    });
+    toastAdd({ title: "Transaction saved" });
 
     // emit saved so parent can refresh
     emit("saved");
@@ -153,11 +150,9 @@ const save = async () => {
     emit("save", data ?? payload);
     return;
   } catch (e) {
-    toast.add?.({
+    toastError({
       title: "Transaction not saved",
       description: e?.message ?? String(e),
-      icon: "i-heroicons-exclamation-circle",
-      color: "red",
     });
     console.error("Save transaction error:", e);
   } finally {
