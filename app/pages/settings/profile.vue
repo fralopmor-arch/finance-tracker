@@ -9,7 +9,7 @@
         class="mb-4"
         label="Email"
         name="email"
-        help="You will receive a confirmation email on both the old and the new addresses if you modify the email address"
+        help="To change your email, you will be logged out and need to verify the new email address"
       >
         <UInput v-model="state.email" />
       </UForm>
@@ -32,6 +32,7 @@ import { z } from "zod";
 
 const supabase = useSupabaseClient();
 const user = useSupabaseUser();
+const router = useRouter();
 
 const { toastSuccess, toastError } = useAppToast();
 const pending = ref(false);
@@ -82,7 +83,6 @@ const loadProfile = async () => {
   }
 };
 
-// Cargar perfil automáticamente cuando user esté disponible
 watchEffect(() => {
   console.log("👤 User ID:", user.value?.sub);
   console.log("📧 User email:", user.value?.email);
@@ -96,20 +96,41 @@ watchEffect(() => {
 
 const saveProfile = async () => {
   pending.value = true;
+
   try {
-    // Si cambia el email, actualizamos Auth primero (disparará confirmación si aplica)
-    if (state.value.email !== user.value.email) {
-      const { error: authError } = await supabase.auth.updateUser({
+    const emailChanged = state.value.email !== user.value.email;
+
+    // If email changed, initiate OTP flow and logout
+    if (emailChanged) {
+      console.log("📧 Email change detected, initiating OTP flow");
+
+      const { error: otpError } = await supabase.auth.signInWithOtp({
         email: state.value.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/confirm`,
+        },
       });
-      if (authError) throw authError;
+
+      if (otpError) throw otpError;
+
+      // Sign out the current user
+      await supabase.auth.signOut();
+
+      toastSuccess({
+        title: "Verification email sent",
+        description: `We've sent a verification link to ${state.value.email}. Please check your inbox.`,
+      });
+
+      // Redirect to login page
+      router.push("/login");
+      return;
     }
 
-    // Upsert en la tabla profiles (id = user.sub) y solicitar la fila resultante
+    // Only update name if email hasn't changed
     const profile = {
       id: user.value.sub,
       full_name: state.value.name,
-      email: state.value.email,
+      email: user.value.email, // Keep current email
     };
 
     const { data: upsertData, error: upsertError } = await supabase
@@ -120,20 +141,17 @@ const saveProfile = async () => {
 
     if (upsertError) throw upsertError;
 
-    // sincronizar estado local inmediatamente con la fila devuelta
     if (upsertData) {
       state.value.name = upsertData.full_name ?? "";
-      state.value.email = upsertData.email ?? state.value.email;
-    } else {
-      // fallback: recargar desde la tabla
-      await loadProfile();
+      console.log("✅ Profile updated:", upsertData);
     }
 
     toastSuccess({
       title: "Profile updated",
-      description: "Your profile has been updated",
+      description: "Your profile has been updated successfully",
     });
   } catch (error) {
+    console.error("💥 Error updating profile:", error);
     toastError({
       title: "Error updating profile",
       description: error?.message ?? String(error),
