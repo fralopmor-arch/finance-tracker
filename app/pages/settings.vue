@@ -18,7 +18,7 @@ import { computed } from "vue";
 const route = useRoute();
 
 const rawItems = [
-  { label: "General", to: "/settings" },
+  { label: "Settings", to: "/settings" },
   { label: "Profile", to: "/settings/profile" },
   { label: "Avatar", to: "/settings/avatar" },
 ];
