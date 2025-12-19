@@ -58,7 +58,7 @@ const loadProfile = async () => {
     const { data, error } = await supabase
       .from("profiles")
       .select("full_name,email")
-      .eq("id", user.value.sub)
+      .eq("user_id", user.value.sub) // cambiado aquí
       .single();
 
     console.log("📦 Profile data:", data);
@@ -128,7 +128,7 @@ const saveProfile = async () => {
 
     // Only update name if email hasn't changed
     const profile = {
-      id: user.value.sub,
+      user_id: user.value.sub, // antes: id
       full_name: state.value.name,
       email: user.value.email, // Keep current email
     };
