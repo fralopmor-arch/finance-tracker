@@ -15,27 +15,23 @@ export default function useFetchTransactions(period = null) {
   const fetchForRange = async () => {
     pending.value = true;
     try {
-      const key =
-        period && period.value
-          ? `transactions-${period.value.from.toDateString()}-${period.value.to.toDateString()}`
-          : "transactions-all";
-
-      const { data } = await useAsyncData(key, async () => {
-        let q = supabase
-          .from("transactions")
-          .select()
-          .order("created_at", { ascending: false });
-        if (period && period.value) {
-          q = q
-            .gte("created_at", period.value.from.toISOString())
-            .lte("created_at", period.value.to.toISOString());
-        }
-        const { data, error } = await q;
-        if (error) return [];
-        return data;
-      });
-
-      items.value = data.value || [];
+      // direct query (avoid useAsyncData cache so refresh() always refetches)
+      let q = supabase
+        .from("transactions")
+        .select()
+        .order("created_at", { ascending: false });
+      if (period && period.value) {
+        q = q
+          .gte("created_at", period.value.from.toISOString())
+          .lte("created_at", period.value.to.toISOString());
+      }
+      const { data, error } = await q;
+      if (error) {
+        console.warn("fetch transactions error", error);
+        items.value = [];
+      } else {
+        items.value = data || [];
+      }
       return items.value;
     } finally {
       pending.value = false;
